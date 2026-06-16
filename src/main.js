@@ -1058,6 +1058,7 @@
               <span class="beat-marker${currentBeat === beatNumber ? " is-current" : ""}">${beatNumber}</span>
             `).join("")}
           </div>
+          ${renderBeatFeedback(measurePattern.events, resultMap)}
           <div class="measure-events">
             ${measurePattern.events.map((measureEvent) => renderMeasureEvent(measureEvent, resultMap.get(measureEvent.id))).join("")}
           </div>
@@ -1068,6 +1069,56 @@
         </div>
       </div>
     `;
+  }
+
+  function renderBeatFeedback(events, resultMap) {
+    const beatStates = Array.from({ length: TIMING.beatsPerMeasure }, () => "pending");
+
+    events.forEach((measureEvent) => {
+      const result = resultMap.get(measureEvent.id);
+      if (!result) {
+        return;
+      }
+
+      const beatIndex = Math.min(
+        TIMING.beatsPerMeasure - 1,
+        Math.max(0, Math.floor(measureEvent.beatOffset))
+      );
+      beatStates[beatIndex] = worstFeedbackState(beatStates[beatIndex], feedbackStateForResult(result));
+    });
+
+    return `
+      <div class="beat-feedback" aria-hidden="true">
+        <div class="beat-feedback-cells">
+          ${beatStates.map((stateName) => `<span class="beat-feedback-cell is-${stateName}"></span>`).join("")}
+        </div>
+        <div class="beat-feedback-dots">
+          ${events.map((measureEvent) => {
+            const result = resultMap.get(measureEvent.id);
+            const stateName = result ? feedbackStateForResult(result) : "pending";
+            const leftPercent = (measureEvent.beatOffset / TIMING.beatsPerMeasure) * 100;
+            return `<span class="beat-feedback-dot is-${stateName}" style="--onset-left: ${leftPercent}%"></span>`;
+          }).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function feedbackStateForResult(result) {
+    if (result.rating === "Perfect" || result.rating === "Good") {
+      return "success";
+    }
+
+    if (result.rating === "Early" || result.rating === "Late") {
+      return "warning";
+    }
+
+    return "miss";
+  }
+
+  function worstFeedbackState(currentState, nextState) {
+    const stateRank = { pending: 0, success: 1, warning: 2, miss: 3 };
+    return stateRank[nextState] > stateRank[currentState] ? nextState : currentState;
   }
 
   function renderInactiveMeasureCard(hand) {

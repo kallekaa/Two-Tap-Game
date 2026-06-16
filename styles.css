@@ -739,6 +739,7 @@ kbd {
   inset: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  z-index: 2;
 }
 
 .beat-marker {
@@ -759,9 +760,81 @@ kbd {
   color: var(--warm);
 }
 
+.beat-feedback {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.beat-feedback-cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  z-index: 1;
+}
+
+.beat-feedback-cell {
+  border-right: 1px solid transparent;
+}
+
+.beat-feedback-cell:last-child {
+  border-right: 0;
+}
+
+.beat-feedback-cell.is-success {
+  background: color-mix(in srgb, var(--ok-soft) 68%, transparent);
+}
+
+.beat-feedback-cell.is-warning {
+  background: color-mix(in srgb, var(--warm-soft) 62%, transparent);
+}
+
+.beat-feedback-cell.is-miss {
+  background: color-mix(in srgb, var(--danger-soft) 66%, transparent);
+}
+
+.beat-feedback-dots {
+  position: absolute;
+  inset: 0 8px;
+  z-index: 3;
+}
+
+.beat-feedback-dot {
+  position: absolute;
+  left: var(--onset-left);
+  bottom: 7px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--muted);
+  border-radius: 999px;
+  background: var(--surface);
+  opacity: 0.58;
+  transform: translateX(-50%);
+}
+
+.beat-feedback-dot.is-success {
+  border-color: var(--ok);
+  background: var(--ok);
+  opacity: 0.92;
+}
+
+.beat-feedback-dot.is-warning {
+  border-color: var(--warm);
+  background: var(--warm);
+  opacity: 0.92;
+}
+
+.beat-feedback-dot.is-miss {
+  border-color: var(--danger);
+  background: var(--danger);
+  opacity: 0.92;
+}
+
 .measure-events {
   position: absolute;
   inset: 30px 8px 8px;
+  z-index: 4;
 }
 
 .measure-event {
