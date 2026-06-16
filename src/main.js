@@ -10,6 +10,8 @@
   const DEFAULT_SETTINGS = {
     bpm: 80,
     difficulty: "beginner",
+    handMode: "two",
+    activeHand: "left",
     sequenceLength: 8,
     mode: "practice",
     leftKey: "a",
@@ -176,7 +178,9 @@
     audioContext: null,
     masterGain: null,
     pauseStartedAt: null,
-    lastSummary: null
+    lastSummary: null,
+    sequenceConfig: null,
+    runToken: 0
   };
 
   const el = {};
@@ -201,6 +205,9 @@
       bpmRange: document.getElementById("bpmRange"),
       bpmNumber: document.getElementById("bpmNumber"),
       difficultyInputs: Array.from(document.querySelectorAll("input[name='difficulty']")),
+      handModeInputs: Array.from(document.querySelectorAll("input[name='handMode']")),
+      activeHandInputs: Array.from(document.querySelectorAll("input[name='activeHand']")),
+      activeHandField: document.getElementById("activeHandField"),
       sequenceLength: document.getElementById("sequenceLength"),
       modeSelect: document.getElementById("modeSelect"),
       leftKeyButton: document.getElementById("leftKeyButton"),
@@ -213,7 +220,9 @@
       startButton: document.getElementById("startButton"),
       pauseButton: document.getElementById("pauseButton"),
       restartButton: document.getElementById("restartButton"),
+      tapHint: document.getElementById("tapHint"),
       leftKeyHint: document.getElementById("leftKeyHint"),
+      tapHintJoin: document.getElementById("tapHintJoin"),
       rightKeyHint: document.getElementById("rightKeyHint"),
       clearHistoryButton: document.getElementById("clearHistoryButton"),
       historyList: document.getElementById("historyList"),
@@ -246,6 +255,33 @@
         if (input.checked) {
           state.settings.difficulty = input.value;
           saveSettings();
+          if (state.status === "paused") {
+            resetPausedSessionForSettingsChange();
+          } else {
+            renderControls();
+          }
+        }
+      });
+    });
+
+    el.handModeInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        if (input.checked) {
+          state.settings.handMode = input.value;
+          saveSettings();
+          applySettingsToControls();
+          renderAll();
+        }
+      });
+    });
+
+    el.activeHandInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        if (input.checked) {
+          state.settings.activeHand = input.value;
+          saveSettings();
+          applySettingsToControls();
+          renderAll();
         }
       });
     });
@@ -319,26 +355,28 @@
     readControlsToSettings();
     saveSettings();
     clearTimers();
-    state.measures = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
+    state.runToken += 1;
+    generateCurrentSequence();
     resetMeasuresForRun();
     state.lastSummary = null;
     el.resultsPanel.hidden = true;
-    startCountdown();
+    startCountdown(state.runToken);
   }
 
   function restartCurrentSequence() {
     readControlsToSettings();
     saveSettings();
     clearTimers();
+    state.runToken += 1;
 
-    if (!state.measures.length) {
-      state.measures = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
+    if (!state.measures.length || hasSequenceConfigChanged()) {
+      generateCurrentSequence();
     }
 
     resetMeasuresForRun();
     state.lastSummary = null;
     el.resultsPanel.hidden = true;
-    startCountdown();
+    startCountdown(state.runToken);
   }
 
   function resetMeasuresForRun() {
@@ -355,29 +393,53 @@
     }));
   }
 
-  async function startCountdown() {
+  function resetPausedSessionForSettingsChange() {
+    clearTimers();
+    hideCountdown();
+    state.status = "idle";
+    state.measures = [];
+    state.currentMeasureIndex = -1;
+    state.currentBeatInMeasure = 0;
+    state.countdownValue = 0;
+    state.pauseStartedAt = null;
+    state.lastSummary = null;
+    state.sequenceConfig = null;
+    state.runToken += 1;
+    el.resultsPanel.hidden = true;
+    renderAll();
+  }
+
+  async function startCountdown(runToken) {
     state.status = "countdown";
     state.countdownValue = TIMING.beatsPerMeasure;
     await ensureAudio();
+
+    if (runToken !== state.runToken || state.status !== "countdown") {
+      return;
+    }
+
     renderAll();
     showCountdown();
     playClick(true);
-    scheduleCountdownTick();
+    scheduleCountdownTick(runToken);
   }
 
-  function scheduleCountdownTick() {
+  function scheduleCountdownTick(runToken) {
     setManagedTimeout(() => {
+      if (runToken !== state.runToken || state.status !== "countdown") {
+        return;
+      }
+
       state.countdownValue -= 1;
 
       if (state.countdownValue > 0) {
         showCountdown();
         playClick(false);
-        scheduleCountdownTick();
+        scheduleCountdownTick(runToken);
         return;
       }
 
-      el.countdownOverlay.hidden = true;
-      beginRun();
+      beginRun(runToken);
     }, beatIntervalMs());
   }
 
@@ -387,13 +449,18 @@
     pulseBeat();
   }
 
-  function beginRun() {
+  function beginRun(runToken) {
+    if (runToken !== state.runToken || state.status !== "countdown") {
+      return;
+    }
+
+    hideCountdown();
     const firstBeat = performance.now();
     const interval = beatIntervalMs();
 
     state.measures.forEach((measure, measureIndex) => {
       measure.startTime = firstBeat + measureIndex * measureDurationMs();
-      HANDS.forEach((hand) => {
+      getActiveHands().forEach((hand) => {
         measure.targets[hand] = measure[hand].events.map((measureEvent) => ({
           measureIndex,
           hand,
@@ -488,7 +555,7 @@
         measure.startTime += pausedFor;
       }
 
-      HANDS.forEach((hand) => {
+      getActiveHands().forEach((hand) => {
         measure.targets[hand].forEach((target) => {
           if (!target.result) {
             target.targetTime += pausedFor;
@@ -519,13 +586,17 @@
 
     if (key === state.settings.leftKey) {
       eventObject.preventDefault();
-      recordTap("left");
+      if (isHandActive("left")) {
+        recordTap("left");
+      }
       return;
     }
 
     if (key === state.settings.rightKey) {
       eventObject.preventDefault();
-      recordTap("right");
+      if (isHandActive("right")) {
+        recordTap("right");
+      }
     }
   }
 
@@ -574,6 +645,10 @@
   }
 
   function recordTap(hand) {
+    if (!isHandActive(hand)) {
+      return;
+    }
+
     const now = performance.now();
     const candidate = findTapCandidate(hand, now);
     const activeMeasure = state.measures[state.currentMeasureIndex];
@@ -694,6 +769,7 @@
     }
 
     clearTimers();
+    hideCountdown();
     getAllTargets().forEach(finalizeTarget);
     state.status = "finished";
     state.currentMeasureIndex = state.measures.length;
@@ -709,13 +785,44 @@
     return Array.from({ length }, (_, index) => ({
       index,
       startTime: null,
-      left: clonePattern(weightedPick(pool), index, "left"),
-      right: clonePattern(weightedPick(pool), index, "right"),
+      left: isHandActive("left") ? clonePattern(weightedPick(pool), index, "left") : createInactivePattern("left"),
+      right: isHandActive("right") ? clonePattern(weightedPick(pool), index, "right") : createInactivePattern("right"),
       taps: { left: [], right: [] },
       extraTaps: { left: 0, right: 0 },
       results: { left: [], right: [] },
       targets: { left: [], right: [] }
     }));
+  }
+
+  function generateCurrentSequence() {
+    state.measures = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
+    state.sequenceConfig = getSequenceConfig();
+  }
+
+  function getSequenceConfig() {
+    return {
+      difficulty: state.settings.difficulty,
+      handMode: state.settings.handMode,
+      activeHand: state.settings.activeHand,
+      sequenceLength: state.settings.sequenceLength
+    };
+  }
+
+  function hasSequenceConfigChanged() {
+    const currentConfig = state.sequenceConfig;
+    const nextConfig = getSequenceConfig();
+
+    return !currentConfig || Object.keys(nextConfig).some((key) => currentConfig[key] !== nextConfig[key]);
+  }
+
+  function createInactivePattern(hand) {
+    return {
+      inactive: true,
+      id: `${hand}-inactive`,
+      label: `${capitalize(hand)} hand inactive`,
+      category: "Not scored",
+      events: []
+    };
   }
 
   function clonePattern(sourcePattern, index, hand) {
@@ -752,17 +859,26 @@
   function buildSessionSummary() {
     const leftResults = collectResults("left");
     const rightResults = collectResults("right");
-    const allResults = [...leftResults, ...rightResults].sort((a, b) => a.targetTime - b.targetTime);
+    const activeResults = getActiveHands()
+      .flatMap((hand) => collectResults(hand))
+      .sort((a, b) => a.targetTime - b.targetTime);
+    const allResults = isOneHandMode()
+      ? activeResults
+      : [...leftResults, ...rightResults].sort((a, b) => a.targetTime - b.targetTime);
     const counts = countRatings(allResults);
+    const activeHandAccuracy = isOneHandMode() ? calculateAccuracy(collectResults(state.settings.activeHand)) : null;
 
     return {
       completedAt: new Date().toISOString(),
       bpm: state.settings.bpm,
       difficulty: state.settings.difficulty,
+      handMode: state.settings.handMode,
+      activeHand: state.settings.activeHand,
       sequenceLength: state.settings.sequenceLength,
       mode: state.settings.mode,
       leftAccuracy: calculateAccuracy(leftResults),
       rightAccuracy: calculateAccuracy(rightResults),
+      activeHandAccuracy,
       combinedAccuracy: calculateAccuracy(allResults),
       maxStreak: calculateMaxStreak(allResults),
       counts
@@ -842,10 +958,11 @@
   }
 
   function renderControls() {
-    const locked = state.status === "countdown" || state.status === "running" || state.status === "paused";
+    const timingLocked = state.status === "countdown" || state.status === "running";
+    const sessionLocked = timingLocked || state.status === "paused";
     const hasMeasures = state.measures.length > 0;
 
-    el.startButton.disabled = locked;
+    el.startButton.disabled = sessionLocked;
     el.pauseButton.disabled = !(state.status === "running" || state.status === "paused");
     el.pauseButton.textContent = state.status === "paused" ? "Resume" : "Pause";
     el.restartButton.disabled = !hasMeasures || state.status === "idle";
@@ -853,14 +970,23 @@
     [
       el.bpmRange,
       el.bpmNumber,
-      ...el.difficultyInputs,
+      ...el.handModeInputs,
       el.sequenceLength,
       el.modeSelect,
       el.leftKeyButton,
       el.rightKeyButton
     ].forEach((control) => {
-      control.disabled = locked;
+      control.disabled = sessionLocked;
     });
+
+    el.difficultyInputs.forEach((control) => {
+      control.disabled = timingLocked;
+    });
+
+    el.activeHandInputs.forEach((control) => {
+      control.disabled = sessionLocked || !isOneHandMode();
+    });
+    el.activeHandField.classList.toggle("is-disabled", !isOneHandMode());
   }
 
   function renderKeys() {
@@ -869,8 +995,23 @@
 
     el.leftKeyButton.querySelector("strong").textContent = left;
     el.rightKeyButton.querySelector("strong").textContent = right;
-    el.leftKeyHint.textContent = left;
-    el.rightKeyHint.textContent = right;
+
+    if (isOneHandMode()) {
+      const activeKey = state.settings.activeHand === "left" ? left : right;
+      const hintId = state.settings.activeHand === "left" ? "leftKeyHint" : "rightKeyHint";
+      el.tapHint.innerHTML = `<span>Tap </span><kbd id="${hintId}">${escapeHtml(activeKey)}</kbd>`;
+    } else {
+      el.tapHint.innerHTML = `
+        <span>Tap</span>
+        <kbd id="leftKeyHint">${escapeHtml(left)}</kbd>
+        <span id="tapHintJoin">and</span>
+        <kbd id="rightKeyHint">${escapeHtml(right)}</kbd>
+      `;
+    }
+
+    el.leftKeyHint = document.getElementById("leftKeyHint");
+    el.tapHintJoin = document.getElementById("tapHintJoin");
+    el.rightKeyHint = document.getElementById("rightKeyHint");
   }
 
   function renderLane() {
@@ -893,6 +1034,10 @@
 
   function renderMeasureCard(measure, hand) {
     const measurePattern = measure[hand];
+    if (measurePattern.inactive) {
+      return renderInactiveMeasureCard(hand);
+    }
+
     const isActive = state.status === "running" && measure.index === state.currentMeasureIndex;
     const currentBeat = isActive ? state.currentBeatInMeasure : 0;
     const resultMap = new Map(measure.results[hand].map((result) => [result.eventId, result]));
@@ -920,6 +1065,18 @@
         <div class="measure-footer">
           <span>${measurePattern.events.length} onset${measurePattern.events.length === 1 ? "" : "s"}</span>
           ${state.settings.mode === "practice" && extraCount > 0 ? `<span>${extraCount} extra tap${extraCount === 1 ? "" : "s"}</span>` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderInactiveMeasureCard(hand) {
+    return `
+      <div class="measure-card inactive-measure-card ${hand}-measure" aria-label="${hand} hand inactive">
+        <div class="inactive-content">
+          <span class="hand-label">${hand === "left" ? "Left hand" : "Right hand"}</span>
+          <h3>${capitalize(hand)} hand inactive</h3>
+          <p>Switch to 2 hands or choose this hand for one-hand practice.</p>
         </div>
       </div>
     `;
@@ -978,12 +1135,23 @@
 
     const summary = state.lastSummary;
     el.resultsPanel.hidden = false;
-    el.scoreSummary.innerHTML = `
-      <div class="score-tile"><span>Left</span><strong>${summary.leftAccuracy}%</strong></div>
-      <div class="score-tile"><span>Right</span><strong>${summary.rightAccuracy}%</strong></div>
-      <div class="score-tile"><span>Combined</span><strong>${summary.combinedAccuracy}%</strong></div>
-      <div class="score-tile"><span>Max streak</span><strong>${summary.maxStreak}</strong></div>
-    `;
+    if (summary.handMode === "one") {
+      const handLabel = summary.activeHand === "right" ? "Right" : "Left";
+      const handAccuracy = Number.isFinite(summary.activeHandAccuracy)
+        ? summary.activeHandAccuracy
+        : summary.combinedAccuracy;
+      el.scoreSummary.innerHTML = `
+        <div class="score-tile"><span>${handLabel}</span><strong>${handAccuracy}%</strong></div>
+        <div class="score-tile"><span>Max streak</span><strong>${summary.maxStreak}</strong></div>
+      `;
+    } else {
+      el.scoreSummary.innerHTML = `
+        <div class="score-tile"><span>Left</span><strong>${summary.leftAccuracy}%</strong></div>
+        <div class="score-tile"><span>Right</span><strong>${summary.rightAccuracy}%</strong></div>
+        <div class="score-tile"><span>Combined</span><strong>${summary.combinedAccuracy}%</strong></div>
+        <div class="score-tile"><span>Max streak</span><strong>${summary.maxStreak}</strong></div>
+      `;
+    }
     el.ratingBreakdown.innerHTML = RATING_ORDER.map((rating) => `
       <div class="rating-tile">
         <strong>${summary.counts[rating]}</strong>
@@ -1002,12 +1170,18 @@
 
     el.historyList.innerHTML = history.map((item) => {
       const completedAt = new Date(item.completedAt);
+      const isOneHandHistory = item.handMode === "one";
+      const handLabel = item.activeHand === "right" ? "Right" : "Left";
+      const scoreText = isOneHandHistory
+        ? `${Number.isFinite(item.activeHandAccuracy) ? item.activeHandAccuracy : item.combinedAccuracy}% ${handLabel.toLowerCase()}`
+        : `${item.combinedAccuracy}% combined`;
       return `
         <li>
-          <strong>${item.combinedAccuracy}% combined</strong>
+          <strong>${scoreText}</strong>
           <div class="history-meta">
-            <span>L ${item.leftAccuracy}%</span>
-            <span>R ${item.rightAccuracy}%</span>
+            ${isOneHandHistory
+              ? `<span>1 hand · ${handLabel}</span>`
+              : `<span>L ${item.leftAccuracy}%</span><span>R ${item.rightAccuracy}%</span><span>2 hands</span>`}
             <span>${item.bpm} BPM</span>
             <span>${capitalize(item.difficulty)}</span>
             <span>${item.sequenceLength} measures</span>
@@ -1097,13 +1271,30 @@
     state.timers.clear();
   }
 
+  function hideCountdown() {
+    el.countdownOverlay.hidden = true;
+    el.countdownOverlay.textContent = "";
+  }
+
   function getAllTargets(hand) {
-    const handsToRead = hand ? [hand] : HANDS;
+    const handsToRead = hand ? [hand].filter(isHandActive) : getActiveHands();
     return state.measures.flatMap((measure) => handsToRead.flatMap((targetHand) => measure.targets[targetHand]));
   }
 
   function isMeasureComplete(measure) {
-    return HANDS.every((hand) => measure.targets[hand].length > 0 && measure.targets[hand].every((target) => target.result));
+    return getActiveHands().every((hand) => measure.targets[hand].length > 0 && measure.targets[hand].every((target) => target.result));
+  }
+
+  function getActiveHands() {
+    return isOneHandMode() ? [state.settings.activeHand] : HANDS;
+  }
+
+  function isHandActive(hand) {
+    return getActiveHands().includes(hand);
+  }
+
+  function isOneHandMode() {
+    return state.settings.handMode === "one";
   }
 
   function beatIntervalMs() {
@@ -1117,6 +1308,8 @@
   function readControlsToSettings() {
     state.settings.bpm = clamp(Number(el.bpmNumber.value) || DEFAULT_SETTINGS.bpm, 40, 180);
     state.settings.difficulty = el.difficultyInputs.find((input) => input.checked)?.value || DEFAULT_SETTINGS.difficulty;
+    state.settings.handMode = el.handModeInputs.find((input) => input.checked)?.value || DEFAULT_SETTINGS.handMode;
+    state.settings.activeHand = el.activeHandInputs.find((input) => input.checked)?.value || DEFAULT_SETTINGS.activeHand;
     state.settings.sequenceLength = Number(el.sequenceLength.value) || DEFAULT_SETTINGS.sequenceLength;
     state.settings.mode = el.modeSelect.value;
     state.settings.theme = el.themeSelect.value;
@@ -1133,6 +1326,12 @@
     el.bpmReadout.textContent = String(state.settings.bpm);
     el.difficultyInputs.forEach((input) => {
       input.checked = input.value === state.settings.difficulty;
+    });
+    el.handModeInputs.forEach((input) => {
+      input.checked = input.value === state.settings.handMode;
+    });
+    el.activeHandInputs.forEach((input) => {
+      input.checked = input.value === state.settings.activeHand;
     });
     el.sequenceLength.value = String(state.settings.sequenceLength);
     el.modeSelect.value = state.settings.mode;
@@ -1169,6 +1368,8 @@
       ? Number(settings.sequenceLength)
       : normalizeLegacyLength(settings.sequenceLength);
     settings.difficulty = MEASURE_PATTERNS[settings.difficulty] ? settings.difficulty : DEFAULT_SETTINGS.difficulty;
+    settings.handMode = settings.handMode === "one" ? "one" : "two";
+    settings.activeHand = HANDS.includes(settings.activeHand) ? settings.activeHand : DEFAULT_SETTINGS.activeHand;
     settings.mode = settings.mode === "scored" ? "scored" : "practice";
     settings.theme = ["system", "light", "dark"].includes(settings.theme) ? settings.theme : DEFAULT_SETTINGS.theme;
     settings.leftKey = settings.leftKey || DEFAULT_SETTINGS.leftKey;

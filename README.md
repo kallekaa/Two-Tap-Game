@@ -10,9 +10,10 @@ A browser-based rhythm game for training independent left- and right-hand tappin
 - Web Audio metronome with visual beat pulse.
 - Countdown before each run.
 - Practice and scored modes.
+- One-hand or two-hand gameplay.
 - Per-hand ratings: Perfect, Good, Early, Late, Miss.
 - Difficulty levels with complete measure patterns containing notes, rests, dotted notes, triplets, and rhythm groups.
-- Tempo, measure count, key binding, volume, mute, and compact-mode settings.
+- Tempo, measure count, hand selection, key binding, volume, mute, and compact-mode settings.
 - Light, dark, and system theme modes.
 - Local settings persistence and recent session history.
 
@@ -32,17 +33,18 @@ http://127.0.0.1:4173/index.html
 
 ## How To Play
 
-1. Choose tempo, difficulty, measure count, and mode.
+1. Choose tempo, difficulty, hand count, measure count, and mode.
 2. Use the default keys `A` for left hand and `L` for right hand, or remap them.
-3. Press Start and wait for the countdown.
-4. Read each hand's 4-beat measure card from left to right.
-5. Tap each hand's key at every note onset in that measure.
-6. Do not tap when a hand's card shows a rest onset.
-7. Review per-hand and combined results at the end.
+3. In one-hand mode, choose whether to practice left or right hand.
+4. Press Start and wait for the countdown.
+5. Read each active hand's 4-beat measure card from left to right.
+6. Tap the active hand key at every note onset in that measure.
+7. Do not tap when a card shows a rest onset.
+8. Review results at the end.
 
 ## Scoring
 
-Timing is scored independently for each hand and for every onset inside a measure:
+Timing is scored independently for every active hand and every onset inside a measure:
 
 - Perfect: within 40 ms.
 - Good: within 90 ms.

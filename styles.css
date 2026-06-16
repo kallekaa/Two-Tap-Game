@@ -356,6 +356,10 @@ input[type="range"] {
   background: var(--surface-2);
 }
 
+.segmented.two-way {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .segmented input {
   position: absolute;
   opacity: 0;
@@ -382,6 +386,14 @@ input[type="range"] {
 
 .segmented input:focus-visible + label {
   box-shadow: var(--focus);
+}
+
+.field.is-disabled {
+  opacity: 0.55;
+}
+
+.field.is-disabled .segmented label {
+  cursor: not-allowed;
 }
 
 .key-grid {
@@ -663,6 +675,28 @@ kbd {
   background: var(--surface);
 }
 
+.inactive-measure-card {
+  align-content: center;
+  min-height: 180px;
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  color: var(--muted);
+}
+
+.inactive-measure-card .inactive-content {
+  display: grid;
+  gap: 6px;
+  text-align: center;
+}
+
+.inactive-measure-card h3 {
+  color: var(--text);
+}
+
+.inactive-measure-card p {
+  font-size: 0.9rem;
+}
+
 .measure-card-header {
   display: flex;
   align-items: start;
@@ -856,6 +890,10 @@ kbd {
   color: var(--accent-strong);
   font-size: 6rem;
   font-weight: 950;
+}
+
+.countdown-overlay[hidden] {
+  display: none;
 }
 
 .results-panel {

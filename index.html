@@ -68,6 +68,26 @@
               </div>
             </fieldset>
 
+            <fieldset class="field">
+              <legend>Gameplay</legend>
+              <div class="segmented two-way">
+                <input id="handModeTwo" type="radio" name="handMode" value="two">
+                <label for="handModeTwo">2 hands</label>
+                <input id="handModeOne" type="radio" name="handMode" value="one">
+                <label for="handModeOne">1 hand</label>
+              </div>
+            </fieldset>
+
+            <fieldset id="activeHandField" class="field">
+              <legend>Practice hand</legend>
+              <div class="segmented two-way">
+                <input id="activeHandLeft" type="radio" name="activeHand" value="left">
+                <label for="activeHandLeft">Left</label>
+                <input id="activeHandRight" type="radio" name="activeHand" value="right">
+                <label for="activeHandRight">Right</label>
+              </div>
+            </fieldset>
+
             <div class="field-grid">
               <label class="field" for="sequenceLength">
                 <span>Measures</span>
@@ -129,10 +149,10 @@
             <button id="restartButton" class="button ghost" type="button" disabled>Restart</button>
           </div>
 
-          <div class="tap-hint" aria-live="polite">
+          <div id="tapHint" class="tap-hint" aria-live="polite">
             <span>Tap</span>
             <kbd id="leftKeyHint">A</kbd>
-            <span>and</span>
+            <span id="tapHintJoin">and</span>
             <kbd id="rightKeyHint">L</kbd>
           </div>
 
