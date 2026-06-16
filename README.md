@@ -1,17 +1,18 @@
 # Two-Tap-Game
 
-A browser-based rhythm game for training independent left- and right-hand tapping. Players follow a metronome and tap two assigned keys against paired rhythm cards, then get timing feedback for each hand.
+A browser-based rhythm game for training independent left- and right-hand tapping. Players follow a metronome and tap two assigned keys against paired 4-beat measure cards, then get timing feedback for each hand.
 
 ## Features
 
-- Paired left-hand and right-hand rhythm rows.
-- One beat per row with automatic progression.
+- Paired left-hand and right-hand 4/4 measure cards.
+- One measure per row with automatic progression every four beats.
+- Every note/rest onset inside a measure is scored.
 - Web Audio metronome with visual beat pulse.
 - Countdown before each run.
 - Practice and scored modes.
 - Per-hand ratings: Perfect, Good, Early, Late, Miss.
-- Difficulty levels with notes, rests, dotted notes, triplets, and rhythm groups.
-- Tempo, sequence length, key binding, volume, mute, and compact-mode settings.
+- Difficulty levels with complete measure patterns containing notes, rests, dotted notes, triplets, and rhythm groups.
+- Tempo, measure count, key binding, volume, mute, and compact-mode settings.
 - Light, dark, and system theme modes.
 - Local settings persistence and recent session history.
 
@@ -31,22 +32,23 @@ http://127.0.0.1:4173/index.html
 
 ## How To Play
 
-1. Choose tempo, difficulty, sequence length, and mode.
+1. Choose tempo, difficulty, measure count, and mode.
 2. Use the default keys `A` for left hand and `L` for right hand, or remap them.
 3. Press Start and wait for the countdown.
-4. Tap each hand's key on the metronome beat when that hand has a note or rhythm group.
-5. Do not tap when a hand's card is a rest.
-6. Review per-hand and combined results at the end.
+4. Read each hand's 4-beat measure card from left to right.
+5. Tap each hand's key at every note onset in that measure.
+6. Do not tap when a hand's card shows a rest onset.
+7. Review per-hand and combined results at the end.
 
 ## Scoring
 
-Timing is scored independently for each hand:
+Timing is scored independently for each hand and for every onset inside a measure:
 
 - Perfect: within 40 ms.
 - Good: within 90 ms.
 - Early: 91-150 ms before the beat.
 - Late: 91-150 ms after the beat.
-- Miss: no tap, tap outside the scoring window, or tap on a rest.
+- Miss: no tap on a note, tap outside the scoring window, or tap on a rest.
 
 Practice mode shows timing deltas during play. Scored mode hides exact timing deltas until the results screen.
 
@@ -64,4 +66,4 @@ Practice mode shows timing deltas during play. Scored mode hides exact timing de
 
 - No backend, account system, build pipeline, or external dependencies are required.
 - Settings and recent sessions are stored in `localStorage` when available.
-- Long note values are currently rhythm-reading prompts; v1 scoring measures beat-onset timing only.
+- Sustained note values are visual reading prompts; scoring measures onset timing only.

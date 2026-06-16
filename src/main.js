@@ -10,7 +10,7 @@
   const DEFAULT_SETTINGS = {
     bpm: 80,
     difficulty: "beginner",
-    sequenceLength: 16,
+    sequenceLength: 8,
     mode: "practice",
     leftKey: "a",
     rightKey: "l",
@@ -21,6 +21,7 @@
   };
 
   const TIMING = {
+    beatsPerMeasure: 4,
     perfectMs: 40,
     goodMs: 90,
     windowMs: 150
@@ -37,45 +38,138 @@
   const RATING_ORDER = ["Perfect", "Good", "Early", "Late", "Miss"];
   const HANDS = ["left", "right"];
 
-  const RHYTHMS = {
+  const MEASURE_PATTERNS = {
     beginner: [
-      rhythm("quarter-note", "♩", "Quarter note", "tap", "Single beat", 7),
-      rhythm("quarter-rest", "𝄽", "Quarter rest", "rest", "Silent beat", 3),
-      rhythm("half-note", "𝅗𝅥", "Half note", "tap", "Long value", 3),
-      rhythm("half-rest", "𝄼", "Half rest", "rest", "Long silence", 2)
+      pattern("whole-note", "Whole note", "One onset held for the measure", 4, [
+        event(0, 4, "tap", "𝅝", "Whole note")
+      ]),
+      pattern("whole-rest", "Whole rest", "Silence for all four beats", 3, [
+        event(0, 4, "rest", "𝄻", "Whole rest")
+      ]),
+      pattern("two-halves", "Two half notes", "Tap on beats 1 and 3", 5, [
+        event(0, 2, "tap", "𝅗𝅥", "Half note"),
+        event(2, 2, "tap", "𝅗𝅥", "Half note")
+      ]),
+      pattern("four-quarters", "Four quarter notes", "Tap every beat", 6, [
+        event(0, 1, "tap", "♩", "Quarter note"),
+        event(1, 1, "tap", "♩", "Quarter note"),
+        event(2, 1, "tap", "♩", "Quarter note"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("quarter-rest-alternating", "Quarter notes and rests", "Tap beats 1 and 3", 4, [
+        event(0, 1, "tap", "♩", "Quarter note"),
+        event(1, 1, "rest", "𝄽", "Quarter rest"),
+        event(2, 1, "tap", "♩", "Quarter note"),
+        event(3, 1, "rest", "𝄽", "Quarter rest")
+      ]),
+      pattern("half-rest-half-note", "Half rest, half note", "Wait, then tap beat 3", 3, [
+        event(0, 2, "rest", "𝄼", "Half rest"),
+        event(2, 2, "tap", "𝅗𝅥", "Half note")
+      ])
     ],
     intermediate: [
-      rhythm("quarter-note", "♩", "Quarter note", "tap", "Single beat", 6),
-      rhythm("quarter-rest", "𝄽", "Quarter rest", "rest", "Silent beat", 3),
-      rhythm("half-note", "𝅗𝅥", "Half note", "tap", "Long value", 2),
-      rhythm("half-rest", "𝄼", "Half rest", "rest", "Long silence", 2),
-      rhythm("eighth-pair", "♫", "Eighth pair", "tap", "Subdivision group", 4),
-      rhythm("eighth-rest", "𝄾", "Eighth rest", "rest", "Short silence", 2),
-      rhythm("dotted-quarter", "♩.", "Dotted quarter", "tap", "Dotted value", 3),
-      rhythm("dotted-half", "𝅗𝅥.", "Dotted half", "tap", "Dotted long value", 2)
+      pattern("four-quarters", "Four quarter notes", "Tap every beat", 4, [
+        event(0, 1, "tap", "♩", "Quarter note"),
+        event(1, 1, "tap", "♩", "Quarter note"),
+        event(2, 1, "tap", "♩", "Quarter note"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("eight-eighths", "Eight eighth notes", "Tap on every subdivision", 4, [
+        event(0, 0.5, "tap", "♪", "Eighth note"),
+        event(0.5, 0.5, "tap", "♪", "Eighth note"),
+        event(1, 0.5, "tap", "♪", "Eighth note"),
+        event(1.5, 0.5, "tap", "♪", "Eighth note"),
+        event(2, 0.5, "tap", "♪", "Eighth note"),
+        event(2.5, 0.5, "tap", "♪", "Eighth note"),
+        event(3, 0.5, "tap", "♪", "Eighth note"),
+        event(3.5, 0.5, "tap", "♪", "Eighth note")
+      ]),
+      pattern("dotted-quarter-eighth-half", "Dotted quarter, eighth, half", "Long-short-long", 4, [
+        event(0, 1.5, "tap", "♩.", "Dotted quarter"),
+        event(1.5, 0.5, "tap", "♪", "Eighth note"),
+        event(2, 2, "tap", "𝅗𝅥", "Half note")
+      ]),
+      pattern("half-quarter-quarter", "Half, quarter, quarter", "Tap beats 1, 3, and 4", 4, [
+        event(0, 2, "tap", "𝅗𝅥", "Half note"),
+        event(2, 1, "tap", "♩", "Quarter note"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("eighths-with-rests", "Eighths with rests", "Tap off and on around rests", 3, [
+        event(0, 0.5, "tap", "♪", "Eighth note"),
+        event(0.5, 0.5, "tap", "♪", "Eighth note"),
+        event(1, 1, "rest", "𝄽", "Quarter rest"),
+        event(2, 0.5, "tap", "♪", "Eighth note"),
+        event(2.5, 0.5, "tap", "♪", "Eighth note"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("quarter-rest-eighth-pair", "Quarter rest, eighth pair", "Rest beat 2, subdivide beat 3", 3, [
+        event(0, 1, "tap", "♩", "Quarter note"),
+        event(1, 1, "rest", "𝄽", "Quarter rest"),
+        event(2, 0.5, "tap", "♪", "Eighth note"),
+        event(2.5, 0.5, "tap", "♪", "Eighth note"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ])
     ],
     advanced: [
-      rhythm("quarter-note", "♩", "Quarter note", "tap", "Single beat", 5),
-      rhythm("quarter-rest", "𝄽", "Quarter rest", "rest", "Silent beat", 3),
-      rhythm("half-note", "𝅗𝅥", "Half note", "tap", "Long value", 2),
-      rhythm("half-rest", "𝄼", "Half rest", "rest", "Long silence", 2),
-      rhythm("eighth-pair", "♫", "Eighth pair", "tap", "Subdivision group", 4),
-      rhythm("eighth-rest", "𝄾", "Eighth rest", "rest", "Short silence", 2),
-      rhythm("dotted-quarter", "♩.", "Dotted quarter", "tap", "Dotted value", 3),
-      rhythm("dotted-half", "𝅗𝅥.", "Dotted half", "tap", "Dotted long value", 2),
-      rhythm("whole-note", "𝅝", "Whole note", "tap", "Full measure value", 2),
-      rhythm("whole-rest", "𝄻", "Whole rest", "rest", "Full measure silence", 2),
-      rhythm("triplet", "3: ♪♪♪", "Triplet", "tap", "Three-note group", 4),
-      rhythm("mixed-eighths", "♪ ♩ ♪", "Mixed rhythm group", "tap", "Mixed group", 3),
-      rhythm("triplet-rest", "3: ♪𝄾♪", "Triplet with rest", "tap", "Interrupted group", 2)
+      pattern("triplet-entry", "Triplet entry", "Triplet on beat 1, then quarters", 4, [
+        event(0, 1 / 3, "tap", "♪", "Triplet note"),
+        event(1 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(2 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(1, 1, "tap", "♩", "Quarter note"),
+        event(2, 1, "rest", "𝄽", "Quarter rest"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("triplet-with-rest", "Triplet with rest", "Middle triplet is silent", 4, [
+        event(0, 1 / 3, "tap", "♪", "Triplet note"),
+        event(1 / 3, 1 / 3, "rest", "𝄾", "Triplet rest"),
+        event(2 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(1, 1, "tap", "♩", "Quarter note"),
+        event(2, 1, "rest", "𝄽", "Quarter rest"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("syncopated-eighths", "Syncopated eighths", "Offbeat taps through the bar", 4, [
+        event(0, 0.5, "tap", "♪", "Eighth note"),
+        event(0.5, 0.5, "tap", "♪", "Eighth note"),
+        event(1, 0.5, "rest", "𝄾", "Eighth rest"),
+        event(1.5, 0.5, "tap", "♪", "Offbeat eighth"),
+        event(2, 0.5, "rest", "𝄾", "Eighth rest"),
+        event(2.5, 0.5, "tap", "♪", "Offbeat eighth"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("mixed-eighth-quarter", "Mixed eighth-quarter group", "Dense opening, steady close", 4, [
+        event(0, 0.5, "tap", "♪", "Eighth note"),
+        event(0.5, 0.5, "tap", "♪", "Eighth note"),
+        event(1, 1, "tap", "♩", "Quarter note"),
+        event(2, 0.5, "tap", "♪", "Eighth note"),
+        event(2.5, 0.5, "tap", "♪", "Eighth note"),
+        event(3, 1, "rest", "𝄽", "Quarter rest")
+      ]),
+      pattern("dotted-syncopation", "Dotted syncopation", "Dotted value into offbeat", 3, [
+        event(0, 1.5, "tap", "♩.", "Dotted quarter"),
+        event(1.5, 0.5, "tap", "♪", "Eighth note"),
+        event(2, 0.5, "rest", "𝄾", "Eighth rest"),
+        event(2.5, 0.5, "tap", "♪", "Offbeat eighth"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ]),
+      pattern("full-triplet-bar", "Triplet pulse measure", "Triplets on beats 1 and 3", 3, [
+        event(0, 1 / 3, "tap", "♪", "Triplet note"),
+        event(1 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(2 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(1, 1, "rest", "𝄽", "Quarter rest"),
+        event(2, 1 / 3, "tap", "♪", "Triplet note"),
+        event(2 + 1 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(2 + 2 / 3, 1 / 3, "tap", "♪", "Triplet note"),
+        event(3, 1, "tap", "♩", "Quarter note")
+      ])
     ]
   };
 
   const state = {
     settings: { ...DEFAULT_SETTINGS },
-    rows: [],
+    measures: [],
     status: "idle",
-    currentIndex: -1,
+    currentMeasureIndex: -1,
+    currentBeatInMeasure: 0,
     countdownValue: 0,
     timers: new Set(),
     keyCaptureHand: null,
@@ -198,8 +292,12 @@
     window.addEventListener("beforeunload", clearTimers);
   }
 
-  function rhythm(id, symbol, label, type, category, weight) {
-    return { id, symbol, label, type, category, weight };
+  function pattern(id, label, category, weight, events) {
+    return { id, label, category, weight, events };
+  }
+
+  function event(beatOffset, durationBeats, type, symbol, label) {
+    return { beatOffset, durationBeats, type, symbol, label };
   }
 
   function updateBpm(value, forceClamp) {
@@ -221,8 +319,8 @@
     readControlsToSettings();
     saveSettings();
     clearTimers();
-    state.rows = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
-    resetRowsForRun();
+    state.measures = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
+    resetMeasuresForRun();
     state.lastSummary = null;
     el.resultsPanel.hidden = true;
     startCountdown();
@@ -233,31 +331,33 @@
     saveSettings();
     clearTimers();
 
-    if (!state.rows.length) {
-      state.rows = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
+    if (!state.measures.length) {
+      state.measures = generateSequence(state.settings.sequenceLength, state.settings.difficulty);
     }
 
-    resetRowsForRun();
+    resetMeasuresForRun();
     state.lastSummary = null;
     el.resultsPanel.hidden = true;
     startCountdown();
   }
 
-  function resetRowsForRun() {
-    state.currentIndex = -1;
+  function resetMeasuresForRun() {
+    state.currentMeasureIndex = -1;
+    state.currentBeatInMeasure = 0;
     state.pauseStartedAt = null;
-    state.rows = state.rows.map((row) => ({
-      ...row,
-      beatTime: null,
-      taps: { left: null, right: null },
+    state.measures = state.measures.map((measure) => ({
+      ...measure,
+      startTime: null,
+      taps: { left: [], right: [] },
       extraTaps: { left: 0, right: 0 },
-      results: { left: null, right: null }
+      results: { left: [], right: [] },
+      targets: { left: [], right: [] }
     }));
   }
 
   async function startCountdown() {
     state.status = "countdown";
-    state.countdownValue = 4;
+    state.countdownValue = TIMING.beatsPerMeasure;
     await ensureAudio();
     renderAll();
     showCountdown();
@@ -291,45 +391,66 @@
     const firstBeat = performance.now();
     const interval = beatIntervalMs();
 
-    state.rows.forEach((row, index) => {
-      row.beatTime = firstBeat + index * interval;
+    state.measures.forEach((measure, measureIndex) => {
+      measure.startTime = firstBeat + measureIndex * measureDurationMs();
+      HANDS.forEach((hand) => {
+        measure.targets[hand] = measure[hand].events.map((measureEvent) => ({
+          measureIndex,
+          hand,
+          event: measureEvent,
+          targetTime: measure.startTime + measureEvent.beatOffset * interval,
+          result: null
+        }));
+      });
     });
 
     state.status = "running";
-    state.currentIndex = -1;
+    state.currentMeasureIndex = -1;
+    state.currentBeatInMeasure = 0;
     renderAll();
-    activateRow(0);
+    scheduleRunTimers();
   }
 
-  function activateRow(index) {
+  function scheduleRunTimers() {
+    const now = performance.now();
+    const interval = beatIntervalMs();
+    const totalBeats = state.measures.length * TIMING.beatsPerMeasure;
+
+    for (let beatIndex = 0; beatIndex < totalBeats; beatIndex += 1) {
+      const beatTime = state.measures[0].startTime + beatIndex * interval;
+      if (beatTime >= now - 5) {
+        setManagedTimeout(() => handleBeatTick(beatIndex), beatTime - now);
+      }
+    }
+
+    getAllTargets().forEach((target) => {
+      const finalizeTime = target.targetTime + TIMING.windowMs + 8;
+      if (!target.result && finalizeTime >= now - 5) {
+        setManagedTimeout(() => {
+          finalizeTarget(target);
+          renderAll();
+        }, finalizeTime - now);
+      }
+    });
+
+    const finishTime = state.measures[0].startTime + totalBeats * interval + TIMING.windowMs + 70;
+    setManagedTimeout(finishGame, finishTime - now);
+  }
+
+  function handleBeatTick(beatIndex) {
     if (state.status !== "running") {
       return;
     }
 
-    finalizeDueRows(performance.now());
-
-    if (index >= state.rows.length) {
-      finishGame();
-      return;
-    }
-
-    state.currentIndex = index;
-    playClick(index % 4 === 0);
+    finalizeDueTargets(performance.now());
+    state.currentMeasureIndex = Math.floor(beatIndex / TIMING.beatsPerMeasure);
+    state.currentBeatInMeasure = beatIndex % TIMING.beatsPerMeasure + 1;
+    playClick(state.currentBeatInMeasure === 1);
     pulseBeat();
     renderAll();
-    scrollActiveRowIntoView();
 
-    const row = state.rows[index];
-    setManagedTimeout(() => {
-      finalizeRow(index);
-      renderAll();
-    }, row.beatTime + TIMING.windowMs + 8 - performance.now());
-
-    if (index < state.rows.length - 1) {
-      const nextTime = state.rows[index + 1].beatTime;
-      setManagedTimeout(() => activateRow(index + 1), nextTime - performance.now());
-    } else {
-      setManagedTimeout(() => finishGame(), row.beatTime + TIMING.windowMs + 70 - performance.now());
+    if (state.currentBeatInMeasure === 1) {
+      scrollActiveMeasureIntoView();
     }
   }
 
@@ -362,62 +483,48 @@
     }
 
     const pausedFor = performance.now() - state.pauseStartedAt;
-    state.rows.forEach((row, index) => {
-      if (row.beatTime !== null && index >= state.currentIndex) {
-        row.beatTime += pausedFor;
+    state.measures.forEach((measure, index) => {
+      if (measure.startTime !== null && index >= state.currentMeasureIndex) {
+        measure.startTime += pausedFor;
       }
+
+      HANDS.forEach((hand) => {
+        measure.targets[hand].forEach((target) => {
+          if (!target.result) {
+            target.targetTime += pausedFor;
+          }
+        });
+      });
     });
 
     state.status = "running";
     state.pauseStartedAt = null;
     await ensureAudio();
     renderAll();
-    scheduleAfterResume();
+    scheduleRunTimers();
   }
 
-  function scheduleAfterResume() {
-    const now = performance.now();
-    const current = state.rows[state.currentIndex];
-
-    if (current && current.beatTime + TIMING.windowMs > now) {
-      setManagedTimeout(() => {
-        finalizeRow(state.currentIndex);
-        renderAll();
-      }, current.beatTime + TIMING.windowMs + 8 - now);
-    } else {
-      finalizeDueRows(now);
-    }
-
-    const nextIndex = state.rows.findIndex((row, index) => index > state.currentIndex && row.beatTime > now);
-
-    if (nextIndex >= 0) {
-      setManagedTimeout(() => activateRow(nextIndex), state.rows[nextIndex].beatTime - now);
-    } else if (current) {
-      setManagedTimeout(() => finishGame(), current.beatTime + TIMING.windowMs + 70 - now);
-    }
-  }
-
-  function handleKeyDown(event) {
-    const key = normalizeKey(event);
+  function handleKeyDown(eventObject) {
+    const key = normalizeKey(eventObject);
 
     if (state.keyCaptureHand) {
-      event.preventDefault();
+      eventObject.preventDefault();
       completeKeyCapture(key);
       return;
     }
 
-    if (event.repeat || !key || state.status !== "running") {
+    if (eventObject.repeat || !key || state.status !== "running") {
       return;
     }
 
     if (key === state.settings.leftKey) {
-      event.preventDefault();
+      eventObject.preventDefault();
       recordTap("left");
       return;
     }
 
     if (key === state.settings.rightKey) {
-      event.preventDefault();
+      eventObject.preventDefault();
       recordTap("right");
     }
   }
@@ -469,74 +576,76 @@
   function recordTap(hand) {
     const now = performance.now();
     const candidate = findTapCandidate(hand, now);
+    const activeMeasure = state.measures[state.currentMeasureIndex];
 
     if (!candidate) {
-      showTapWarning(hand);
+      if (state.settings.mode === "practice" && activeMeasure) {
+        activeMeasure.extraTaps[hand] += 1;
+        renderAll();
+      }
       return;
     }
 
-    const { row, deltaMs } = candidate;
+    const { target, deltaMs } = candidate;
+    const measure = state.measures[target.measureIndex];
 
-    if (row.results[hand]) {
-      row.extraTaps[hand] += 1;
+    if (target.result) {
+      measure.extraTaps[hand] += 1;
       renderAll();
       return;
     }
 
-    row.taps[hand] = {
+    measure.taps[hand].push({
       at: now,
-      deltaMs
-    };
-    row.results[hand] = scoreTap(row[hand], deltaMs);
+      deltaMs,
+      eventId: target.event.id
+    });
+    target.result = scoreTarget(target, deltaMs, true);
+    measure.results[hand].push(target.result);
     renderAll();
   }
 
   function findTapCandidate(hand, now) {
-    const possibleIndexes = [state.currentIndex, state.currentIndex + 1];
     let best = null;
 
-    possibleIndexes.forEach((index) => {
-      const row = state.rows[index];
-
-      if (!row || row.beatTime === null || row.results[hand]) {
+    getAllTargets(hand).forEach((target) => {
+      if (target.result) {
         return;
       }
 
-      const deltaMs = now - row.beatTime;
-
+      const deltaMs = now - target.targetTime;
       if (Math.abs(deltaMs) > TIMING.windowMs) {
         return;
       }
 
       if (!best || Math.abs(deltaMs) < Math.abs(best.deltaMs)) {
-        best = { row, index, deltaMs };
+        best = { target, deltaMs };
       }
     });
 
     return best;
   }
 
-  function showTapWarning(hand) {
-    if (state.settings.mode !== "practice") {
-      return;
-    }
-
-    const row = state.rows[state.currentIndex];
-    if (!row) {
-      return;
-    }
-
-    row.extraTaps[hand] += 1;
-    renderAll();
-  }
-
-  function scoreTap(card, deltaMs) {
-    if (card.type === "rest") {
+  function scoreTarget(target, deltaMs, actualTap) {
+    if (target.event.type === "rest") {
       return {
-        rating: "Miss",
+        eventId: target.event.id,
+        rating: actualTap ? "Miss" : "Perfect",
         deltaMs,
         expectedTap: false,
-        actualTap: true
+        actualTap,
+        targetTime: target.targetTime
+      };
+    }
+
+    if (!actualTap) {
+      return {
+        eventId: target.event.id,
+        rating: "Miss",
+        deltaMs: null,
+        expectedTap: true,
+        actualTap: false,
+        targetTime: target.targetTime
       };
     }
 
@@ -552,48 +661,31 @@
     }
 
     return {
+      eventId: target.event.id,
       rating,
       deltaMs,
       expectedTap: true,
-      actualTap: true
+      actualTap: true,
+      targetTime: target.targetTime
     };
   }
 
-  function finalizeDueRows(now) {
-    state.rows.forEach((row, index) => {
-      if (row.beatTime !== null && index <= state.currentIndex && row.beatTime + TIMING.windowMs <= now) {
-        finalizeRow(index);
+  function finalizeDueTargets(now) {
+    getAllTargets().forEach((target) => {
+      if (!target.result && target.targetTime + TIMING.windowMs <= now) {
+        finalizeTarget(target);
       }
     });
   }
 
-  function finalizeRow(index) {
-    const row = state.rows[index];
-
-    if (!row) {
+  function finalizeTarget(target) {
+    if (target.result) {
       return;
     }
 
-    HANDS.forEach((hand) => {
-      if (row.results[hand]) {
-        return;
-      }
-
-      const card = row[hand];
-      row.results[hand] = card.type === "rest"
-        ? {
-            rating: "Perfect",
-            deltaMs: null,
-            expectedTap: false,
-            actualTap: false
-          }
-        : {
-            rating: "Miss",
-            deltaMs: null,
-            expectedTap: true,
-            actualTap: false
-          };
-    });
+    const measure = state.measures[target.measureIndex];
+    target.result = scoreTarget(target, null, false);
+    measure.results[target.hand].push(target.result);
   }
 
   function finishGame() {
@@ -602,36 +694,44 @@
     }
 
     clearTimers();
-    state.rows.forEach((_, index) => finalizeRow(index));
+    getAllTargets().forEach(finalizeTarget);
     state.status = "finished";
-    state.currentIndex = state.rows.length;
+    state.currentMeasureIndex = state.measures.length;
+    state.currentBeatInMeasure = 0;
     state.lastSummary = buildSessionSummary();
     saveHistoryItem(state.lastSummary);
     renderAll();
   }
 
   function generateSequence(length, difficulty) {
-    const pool = RHYTHMS[difficulty] || RHYTHMS.beginner;
+    const pool = MEASURE_PATTERNS[difficulty] || MEASURE_PATTERNS.beginner;
 
     return Array.from({ length }, (_, index) => ({
       index,
-      left: cloneRhythm(weightedPick(pool), index, "left"),
-      right: cloneRhythm(weightedPick(pool), index, "right"),
-      beatTime: null,
-      taps: { left: null, right: null },
+      startTime: null,
+      left: clonePattern(weightedPick(pool), index, "left"),
+      right: clonePattern(weightedPick(pool), index, "right"),
+      taps: { left: [], right: [] },
       extraTaps: { left: 0, right: 0 },
-      results: { left: null, right: null }
+      results: { left: [], right: [] },
+      targets: { left: [], right: [] }
     }));
   }
 
-  function cloneRhythm(card, index, hand) {
+  function clonePattern(sourcePattern, index, hand) {
     return {
-      id: `${card.id}-${hand}-${index}-${Math.random().toString(36).slice(2, 7)}`,
-      symbol: card.symbol,
-      label: card.label,
-      type: card.type,
-      category: card.category,
-      difficulty: state.settings.difficulty
+      id: `${sourcePattern.id}-${hand}-${index}-${Math.random().toString(36).slice(2, 7)}`,
+      label: sourcePattern.label,
+      category: sourcePattern.category,
+      difficulty: state.settings.difficulty,
+      events: sourcePattern.events.map((sourceEvent, eventIndex) => ({
+        id: `${sourcePattern.id}-${hand}-${index}-${eventIndex}`,
+        beatOffset: sourceEvent.beatOffset,
+        durationBeats: sourceEvent.durationBeats,
+        type: sourceEvent.type,
+        symbol: sourceEvent.symbol,
+        label: sourceEvent.label
+      }))
     };
   }
 
@@ -650,9 +750,9 @@
   }
 
   function buildSessionSummary() {
-    const leftResults = state.rows.map((row) => row.results.left);
-    const rightResults = state.rows.map((row) => row.results.right);
-    const allResults = state.rows.flatMap((row) => [row.results.left, row.results.right]);
+    const leftResults = collectResults("left");
+    const rightResults = collectResults("right");
+    const allResults = [...leftResults, ...rightResults].sort((a, b) => a.targetTime - b.targetTime);
     const counts = countRatings(allResults);
 
     return {
@@ -667,6 +767,10 @@
       maxStreak: calculateMaxStreak(allResults),
       counts
     };
+  }
+
+  function collectResults(hand) {
+    return state.measures.flatMap((measure) => measure.results[hand]);
   }
 
   function calculateAccuracy(results) {
@@ -714,22 +818,22 @@
   }
 
   function renderStatus() {
-    const total = state.rows.length;
-    const current = Math.min(Math.max(state.currentIndex + 1, 0), total);
+    const total = state.measures.length;
+    const current = Math.min(Math.max(state.currentMeasureIndex + 1, 0), total);
 
     if (state.status === "idle") {
       el.sessionStatus.textContent = "Ready";
       el.playSubhead.textContent = "Configure a session, then start the metronome.";
     } else if (state.status === "countdown") {
       el.sessionStatus.textContent = "Counting in";
-      el.playSubhead.textContent = "Get ready for the first beat.";
+      el.playSubhead.textContent = "Get ready for the first measure.";
     } else if (state.status === "running") {
-      el.sessionStatus.textContent = `Playing row ${current} of ${total}`;
+      el.sessionStatus.textContent = `Playing measure ${current} of ${total}`;
       el.playSubhead.textContent = state.settings.mode === "practice"
         ? "Practice mode shows timing deltas as you play."
         : "Scored mode hides timing deltas until the end.";
     } else if (state.status === "paused") {
-      el.sessionStatus.textContent = `Paused at row ${current} of ${total}`;
+      el.sessionStatus.textContent = `Paused at measure ${current} of ${total}`;
       el.playSubhead.textContent = "Resume to continue from the same timing position.";
     } else {
       el.sessionStatus.textContent = "Finished";
@@ -739,12 +843,12 @@
 
   function renderControls() {
     const locked = state.status === "countdown" || state.status === "running" || state.status === "paused";
-    const hasRows = state.rows.length > 0;
+    const hasMeasures = state.measures.length > 0;
 
     el.startButton.disabled = locked;
     el.pauseButton.disabled = !(state.status === "running" || state.status === "paused");
     el.pauseButton.textContent = state.status === "paused" ? "Resume" : "Pause";
-    el.restartButton.disabled = !hasRows || state.status === "idle";
+    el.restartButton.disabled = !hasMeasures || state.status === "idle";
 
     [
       el.bpmRange,
@@ -770,43 +874,74 @@
   }
 
   function renderLane() {
-    if (!state.rows.length) {
-      el.rhythmLane.innerHTML = `<p class="empty-state">No rhythm sequence yet. Start a session to generate paired cards.</p>`;
+    if (!state.measures.length) {
+      el.rhythmLane.innerHTML = `<p class="empty-state">No measure sequence yet. Start a session to generate paired measure cards.</p>`;
       return;
     }
 
-    el.rhythmLane.innerHTML = state.rows.map((row, index) => {
-      const active = state.status === "running" && index === state.currentIndex;
-      const complete = row.results.left && row.results.right;
+    el.rhythmLane.innerHTML = state.measures.map((measure, index) => {
+      const active = state.status === "running" && index === state.currentMeasureIndex;
+      const complete = isMeasureComplete(measure);
       return `
         <article class="rhythm-row${active ? " is-active" : ""}${complete ? " is-complete" : ""}" data-row="${index + 1}">
-          ${renderCard(row, "left")}
-          ${renderCard(row, "right")}
+          ${renderMeasureCard(measure, "left")}
+          ${renderMeasureCard(measure, "right")}
         </article>
       `;
     }).join("");
   }
 
-  function renderCard(row, hand) {
-    const card = row[hand];
-    const result = row.results[hand];
-    const extraCount = row.extraTaps[hand];
-    const badge = result ? renderResultBadge(result) : `<span class="badge">Waiting</span>`;
+  function renderMeasureCard(measure, hand) {
+    const measurePattern = measure[hand];
+    const isActive = state.status === "running" && measure.index === state.currentMeasureIndex;
+    const currentBeat = isActive ? state.currentBeatInMeasure : 0;
+    const resultMap = new Map(measure.results[hand].map((result) => [result.eventId, result]));
+    const extraCount = measure.extraTaps[hand];
+
+    return `
+      <div class="measure-card ${hand}-measure">
+        <div class="measure-card-header">
+          <div>
+            <span class="hand-label">${hand === "left" ? "Left hand" : "Right hand"}</span>
+            <h3>${escapeHtml(measurePattern.label)}</h3>
+          </div>
+          <span class="pattern-label">${escapeHtml(measurePattern.category)}</span>
+        </div>
+        <div class="measure-timeline" aria-label="${hand} hand measure timeline">
+          <div class="beat-grid" aria-hidden="true">
+            ${[1, 2, 3, 4].map((beatNumber) => `
+              <span class="beat-marker${currentBeat === beatNumber ? " is-current" : ""}">${beatNumber}</span>
+            `).join("")}
+          </div>
+          <div class="measure-events">
+            ${measurePattern.events.map((measureEvent) => renderMeasureEvent(measureEvent, resultMap.get(measureEvent.id))).join("")}
+          </div>
+        </div>
+        <div class="measure-footer">
+          <span>${measurePattern.events.length} onset${measurePattern.events.length === 1 ? "" : "s"}</span>
+          ${state.settings.mode === "practice" && extraCount > 0 ? `<span>${extraCount} extra tap${extraCount === 1 ? "" : "s"}</span>` : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderMeasureEvent(measureEvent, result) {
+    const startPercent = (measureEvent.beatOffset / TIMING.beatsPerMeasure) * 100;
+    const widthPercent = (measureEvent.durationBeats / TIMING.beatsPerMeasure) * 100;
+    const badge = result ? renderResultBadge(result) : `<span class="badge">Pending</span>`;
     const delta = state.settings.mode === "practice" && result && result.deltaMs !== null
       ? `<span class="delta">${formatDelta(result.deltaMs)}</span>`
       : "";
-    const extra = state.settings.mode === "practice" && extraCount > 0
-      ? `<span class="delta">${extraCount} extra tap${extraCount === 1 ? "" : "s"}</span>`
-      : "";
 
     return `
-      <div class="note-card ${card.type === "rest" ? "rest-card" : "tap-card"}">
-        <div class="note-symbol" aria-hidden="true">${escapeHtml(card.symbol)}</div>
-        <div class="note-content">
-          <div class="note-label">${escapeHtml(card.label)}</div>
-          <div class="note-category">${escapeHtml(card.category)} · ${hand === "left" ? "Left" : "Right"} hand</div>
-          <div class="result-line">${badge}${delta}${extra}</div>
+      <div class="measure-event ${measureEvent.type === "rest" ? "rest-event" : "tap-event"}"
+        style="--event-start: ${startPercent}%; --event-width: ${widthPercent}%">
+        <div class="event-stem" aria-hidden="true"></div>
+        <div class="event-chip">
+          <span class="event-symbol">${escapeHtml(measureEvent.symbol)}</span>
+          <span class="event-label">${escapeHtml(measureEvent.label)}</span>
         </div>
+        <div class="event-feedback">${badge}${delta}</div>
       </div>
     `;
   }
@@ -816,11 +951,23 @@
   }
 
   function renderProgress() {
-    const total = state.rows.length;
-    const current = total ? Math.min(Math.max(state.currentIndex + 1, 0), total) : 0;
-    const percent = total ? Math.round((current / total) * 100) : 0;
+    const totalMeasures = state.measures.length;
+    const currentMeasure = totalMeasures ? Math.min(Math.max(state.currentMeasureIndex + 1, 0), totalMeasures) : 0;
+    const totalBeats = totalMeasures * TIMING.beatsPerMeasure;
+    let completedBeats = 0;
 
-    el.beatCounter.textContent = `${current} / ${total}`;
+    if (state.status === "finished") {
+      completedBeats = totalBeats;
+    } else if (state.status === "running" || state.status === "paused") {
+      completedBeats = Math.max(0, state.currentMeasureIndex * TIMING.beatsPerMeasure + state.currentBeatInMeasure);
+    }
+
+    const percent = totalBeats ? Math.round((completedBeats / totalBeats) * 100) : 0;
+    const beatText = state.currentBeatInMeasure > 0 ? ` · Beat ${state.currentBeatInMeasure}` : "";
+
+    el.beatCounter.textContent = totalMeasures
+      ? `Measure ${currentMeasure} / ${totalMeasures}${beatText}`
+      : "Measure 0 / 0";
     el.progressBar.style.width = `${percent}%`;
   }
 
@@ -863,6 +1010,7 @@
             <span>R ${item.rightAccuracy}%</span>
             <span>${item.bpm} BPM</span>
             <span>${capitalize(item.difficulty)}</span>
+            <span>${item.sequenceLength} measures</span>
             <span>${completedAt.toLocaleDateString()} ${completedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           </div>
         </li>
@@ -870,7 +1018,7 @@
     }).join("");
   }
 
-  function scrollActiveRowIntoView() {
+  function scrollActiveMeasureIntoView() {
     window.requestAnimationFrame(() => {
       const active = el.rhythmLane.querySelector(".rhythm-row.is-active");
       if (active) {
@@ -949,8 +1097,21 @@
     state.timers.clear();
   }
 
+  function getAllTargets(hand) {
+    const handsToRead = hand ? [hand] : HANDS;
+    return state.measures.flatMap((measure) => handsToRead.flatMap((targetHand) => measure.targets[targetHand]));
+  }
+
+  function isMeasureComplete(measure) {
+    return HANDS.every((hand) => measure.targets[hand].length > 0 && measure.targets[hand].every((target) => target.result));
+  }
+
   function beatIntervalMs() {
     return 60000 / state.settings.bpm;
+  }
+
+  function measureDurationMs() {
+    return beatIntervalMs() * TIMING.beatsPerMeasure;
   }
 
   function readControlsToSettings() {
@@ -1004,10 +1165,10 @@
 
   function sanitizeSettings(settings) {
     settings.bpm = clamp(Number(settings.bpm) || DEFAULT_SETTINGS.bpm, 40, 180);
-    settings.sequenceLength = [8, 16, 32, 64].includes(Number(settings.sequenceLength))
+    settings.sequenceLength = [4, 8, 16, 32].includes(Number(settings.sequenceLength))
       ? Number(settings.sequenceLength)
-      : DEFAULT_SETTINGS.sequenceLength;
-    settings.difficulty = RHYTHMS[settings.difficulty] ? settings.difficulty : DEFAULT_SETTINGS.difficulty;
+      : normalizeLegacyLength(settings.sequenceLength);
+    settings.difficulty = MEASURE_PATTERNS[settings.difficulty] ? settings.difficulty : DEFAULT_SETTINGS.difficulty;
     settings.mode = settings.mode === "scored" ? "scored" : "practice";
     settings.theme = ["system", "light", "dark"].includes(settings.theme) ? settings.theme : DEFAULT_SETTINGS.theme;
     settings.leftKey = settings.leftKey || DEFAULT_SETTINGS.leftKey;
@@ -1025,6 +1186,19 @@
 
     settings.metronomeMuted = Boolean(settings.metronomeMuted);
     settings.compactMode = Boolean(settings.compactMode);
+  }
+
+  function normalizeLegacyLength(value) {
+    const numericValue = Number(value);
+    if (numericValue === 64) {
+      return 16;
+    }
+
+    if ([8, 16, 32].includes(numericValue)) {
+      return numericValue;
+    }
+
+    return DEFAULT_SETTINGS.sequenceLength;
   }
 
   function applyTheme(theme) {
@@ -1093,16 +1267,16 @@
     }
   }
 
-  function normalizeKey(event) {
-    if (event.code === "Space") {
+  function normalizeKey(eventObject) {
+    if (eventObject.code === "Space") {
       return " ";
     }
 
-    if (event.key.length === 1) {
-      return event.key.toLowerCase();
+    if (eventObject.key.length === 1) {
+      return eventObject.key.toLowerCase();
     }
 
-    return event.key;
+    return eventObject.key;
   }
 
   function displayKey(key) {
