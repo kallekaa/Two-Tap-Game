@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Two-Tap-Game</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%228%22 fill=%22%23087f8c%22/%3E%3Ccircle cx=%2222%22 cy=%2232%22 r=%2210%22 fill=%22%23fffdf8%22/%3E%3Ccircle cx=%2242%22 cy=%2232%22 r=%2210%22 fill=%22%23f3aa42%22/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="src/main.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
+          <div>
+            <h1>Two-Tap-Game</h1>
+            <p>Independent left/right rhythm tapping</p>
+          </div>
+        </div>
+
+        <div class="header-actions" aria-label="Display settings">
+          <label class="field inline-field" for="themeSelect">
+            <span>Theme</span>
+            <select id="themeSelect" name="theme">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+        </div>
+      </header>
+
+      <main class="game-layout">
+        <aside class="setup-panel" aria-labelledby="setupTitle">
+          <div class="panel-heading">
+            <div>
+              <h2 id="setupTitle">Session</h2>
+              <p id="sessionStatus">Ready</p>
+            </div>
+            <div class="tempo-readout" aria-live="polite">
+              <strong id="bpmReadout">80</strong>
+              <span>BPM</span>
+            </div>
+          </div>
+
+          <form id="settingsForm" class="settings-form">
+            <div class="field">
+              <label for="bpmRange">Tempo</label>
+              <div class="range-row">
+                <input id="bpmRange" name="bpm" type="range" min="40" max="180" step="1" value="80">
+                <input id="bpmNumber" name="bpmNumber" type="number" min="40" max="180" step="1" value="80" inputmode="numeric">
+              </div>
+            </div>
+
+            <fieldset class="field">
+              <legend>Difficulty</legend>
+              <div class="segmented">
+                <input id="difficultyBeginner" type="radio" name="difficulty" value="beginner">
+                <label for="difficultyBeginner">Beginner</label>
+                <input id="difficultyIntermediate" type="radio" name="difficulty" value="intermediate">
+                <label for="difficultyIntermediate">Intermediate</label>
+                <input id="difficultyAdvanced" type="radio" name="difficulty" value="advanced">
+                <label for="difficultyAdvanced">Advanced</label>
+              </div>
+            </fieldset>
+
+            <div class="field-grid">
+              <label class="field" for="sequenceLength">
+                <span>Rows</span>
+                <select id="sequenceLength" name="sequenceLength">
+                  <option value="8">8</option>
+                  <option value="16">16</option>
+                  <option value="32">32</option>
+                  <option value="64">64</option>
+                </select>
+              </label>
+
+              <label class="field" for="modeSelect">
+                <span>Mode</span>
+                <select id="modeSelect" name="mode">
+                  <option value="practice">Practice</option>
+                  <option value="scored">Scored</option>
+                </select>
+              </label>
+            </div>
+
+            <fieldset class="field">
+              <legend>Inputs</legend>
+              <div class="key-grid">
+                <button id="leftKeyButton" class="key-bind" type="button" data-hand="left" aria-label="Set left hand key">
+                  <span>Left</span>
+                  <strong>A</strong>
+                </button>
+                <button id="rightKeyButton" class="key-bind" type="button" data-hand="right" aria-label="Set right hand key">
+                  <span>Right</span>
+                  <strong>L</strong>
+                </button>
+              </div>
+              <p id="keyRemapHelp" class="helper-text">Select a key, then press the new input.</p>
+            </fieldset>
+
+            <div class="field">
+              <label for="volumeRange">Metronome volume</label>
+              <div class="range-row">
+                <input id="volumeRange" name="metronomeVolume" type="range" min="0" max="1" step="0.01" value="0.65">
+                <span id="volumeReadout" class="small-readout">65%</span>
+              </div>
+            </div>
+
+            <div class="toggle-list">
+              <label class="toggle">
+                <input id="muteToggle" name="metronomeMuted" type="checkbox">
+                <span>Mute metronome</span>
+              </label>
+              <label class="toggle">
+                <input id="compactToggle" name="compactMode" type="checkbox">
+                <span>Compact rows</span>
+              </label>
+            </div>
+          </form>
+
+          <div class="control-row">
+            <button id="startButton" class="button primary" type="button">Start</button>
+            <button id="pauseButton" class="button" type="button" disabled>Pause</button>
+            <button id="restartButton" class="button ghost" type="button" disabled>Restart</button>
+          </div>
+
+          <div class="tap-hint" aria-live="polite">
+            <span>Tap</span>
+            <kbd id="leftKeyHint">A</kbd>
+            <span>and</span>
+            <kbd id="rightKeyHint">L</kbd>
+          </div>
+
+          <section class="history-panel" aria-labelledby="historyTitle">
+            <div class="section-heading">
+              <h2 id="historyTitle">Recent Sessions</h2>
+              <button id="clearHistoryButton" class="text-button" type="button">Clear</button>
+            </div>
+            <ol id="historyList" class="history-list"></ol>
+          </section>
+        </aside>
+
+        <section class="play-area" aria-labelledby="playTitle">
+          <div class="play-header">
+            <div>
+              <h2 id="playTitle">Rhythm Lane</h2>
+              <p id="playSubhead">Configure a session, then start the metronome.</p>
+            </div>
+            <div class="beat-display" aria-live="polite">
+              <span id="beatPulse" class="beat-pulse" aria-hidden="true"></span>
+              <span id="beatCounter">0 / 0</span>
+            </div>
+          </div>
+
+          <div class="progress-track" aria-hidden="true">
+            <span id="progressBar"></span>
+          </div>
+
+          <div id="countdownOverlay" class="countdown-overlay" hidden aria-live="assertive"></div>
+
+          <div class="lane-labels" aria-hidden="true">
+            <span>Left hand</span>
+            <span>Right hand</span>
+          </div>
+          <div id="rhythmLane" class="rhythm-lane" aria-live="polite"></div>
+
+          <section id="resultsPanel" class="results-panel" aria-labelledby="resultsTitle" hidden>
+            <div class="section-heading">
+              <h2 id="resultsTitle">Results</h2>
+              <button id="playAgainButton" class="button primary" type="button">Play Again</button>
+            </div>
+            <div id="scoreSummary" class="score-summary"></div>
+            <div id="ratingBreakdown" class="rating-breakdown"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
